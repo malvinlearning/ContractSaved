@@ -350,7 +350,7 @@ class App extends Component {
         try {
             const accounts = await web3.eth.getAccounts();
             await crowdfunding.methods.changeOwner(newOwnerAddress).send({
-                from: accounts[0],
+                from: this.state.currentAccount,
             });
 
             this.setState({

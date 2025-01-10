@@ -7,6 +7,7 @@ class App extends Component {
     state = {
         ownerAddress: "", // Owner's address
         newOwnerAddress: "",
+        coOwnerAddress: "",
         balance: 0,
         collectedFees: 0,
         isDestroyed: false,
@@ -26,10 +27,11 @@ class App extends Component {
         try { // Αν υπάρχει εγκατεστημένο metamask
             // Ορισμός των state μεταβλητών
             const ownerAddress = await crowdfunding.methods.owner().call();
+            const coOwnerAddress = await crowdfunding.methods.coOwner().call();
             const collectedFees = web3.utils.fromWei(await crowdfunding.methods.getContractFees().call(), 'ether');
             const contractBalanceWei = await crowdfunding.methods.getContractBalance().call();
             const contractBalanceEther = web3.utils.fromWei(contractBalanceWei, 'ether');
-            this.setState({ message: '', ownerAddress, collectedFees, balance: contractBalanceEther });
+            this.setState({ message: '', ownerAddress, collectedFees, balance: contractBalanceEther, coOwnerAddress });
             
             if (!this.eventListenersSet) {
                 this.setupEventListeners();
@@ -52,8 +54,7 @@ class App extends Component {
             }
         } catch (error) { // Αν το metamask δεν έχει εγκατασταθεί
             this.setState({ message: 'Metamask is not installed' });
-        }
-        
+        }    
     }
 
     setupEventListeners = async () =>  {
@@ -450,8 +451,10 @@ class App extends Component {
         const { isDestroyed, currentAccount, liveCampaigns, canceledCampaigns, newOwnerAddress, message, bannedEntrepreneurs,
                 entrepreneurToBan, hasRefundableInvestment } = this.state;
         const isOwner = this.state.currentAccount === this.state.ownerAddress.toLocaleLowerCase();
-        const isDisabled = isOwner || !window.ethereum;
-        const canWithdraw = isOwner && parseFloat(this.state.collectedFees) > 0;
+        const isCoOwner = this.state.currentAccount === this.state.coOwnerAddress.toLowerCase();
+        const isDisabled = (isOwner || isCoOwner) || !window.ethereum;
+        const isPrivileged = isOwner || isCoOwner;
+        const canWithdraw = (isOwner || isCoOwner) && parseFloat(this.state.collectedFees) > 0;
         const isBanned = bannedEntrepreneurs.includes(currentAccount); // Check if current account is banned
         return (
             <>
@@ -556,7 +559,7 @@ class App extends Component {
                                 Create
                             </button>
                         
-                        {isOwner && (
+                        {isPrivileged && (
                             <p className="text-danger mt-2">Owners cannot create campaigns.</p>
                         )}
                         {isBanned && (
@@ -606,7 +609,7 @@ class App extends Component {
                                                 Pledge
                                             </button>
 
-                                            {(currentAccount === campaign.entrepreneur.toLocaleLowerCase() || isOwner) && (
+                                            {(currentAccount === campaign.entrepreneur.toLocaleLowerCase() || isPrivileged) && (
                                                     
                                                     <button
                                                         className="btn btn-danger btn-sm"
@@ -617,7 +620,7 @@ class App extends Component {
                                                     </button>
                                             )}
 
-                                            {(currentAccount === campaign.entrepreneur.toLocaleLowerCase() || isOwner) && (
+                                            {(currentAccount === campaign.entrepreneur.toLocaleLowerCase() || isPrivileged) && (
                                                     <button
                                                         className={`btn btn-success btn-sm ${!campaign.canComplete ? 'disabled' : ''}`}
                                                         onClick={() => this.fulfillCampaign(campaign.id)}
@@ -724,7 +727,7 @@ class App extends Component {
                 <div className="container mt-4">
                     <h2>Control Panel</h2>
                     <div>
-                        {isOwner ? (
+                        {isPrivileged ? (
                             <button
                                 className="btn btn-warning"
                                 onClick={this.withdrawFunds}
@@ -738,7 +741,7 @@ class App extends Component {
                         )}
                         <p className="text-muted mt-2">{this.state.message}</p>
 
-                        {(isOwner) ? (
+                        {(isPrivileged) ? (
                             <>
                                 <div className="d-flex align-items-center">
                                     <button
@@ -765,7 +768,7 @@ class App extends Component {
                             <p className="text-muted">Only the owner can change ownership.</p>
                         )}
                         {/* Ban Entrepreneur */}
-                        {isOwner && (
+                        {isPrivileged && (
                             <div className="d-flex align-items-center mt-3">
                                 <button
                                     className="btn btn-danger mr-2"
@@ -786,12 +789,12 @@ class App extends Component {
 
                             </div>
                         )}
-                        {!isOwner && (
+                        {!isPrivileged && (
                             <p className="text-muted">Only the owner can ban entrepreneurs.</p>
                         )}
                         {message && <p className="text-info mt-2">{message}</p>}
 
-                        {isOwner && (
+                        {isPrivileged && (
                             <div className="mt-4">
                                 <button
                                     className="btn btn-danger"
@@ -802,7 +805,7 @@ class App extends Component {
                                 </button>
                             </div>
                         )}
-                        {!isOwner && (
+                        {!isPrivileged && (
                             <p className="text-muted">Only the owner can destroy a contract.</p>
                         )}
                         {message && <p className="text-info mt-2">{message}</p>}

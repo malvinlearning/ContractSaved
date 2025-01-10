@@ -1,6 +1,6 @@
 import web3 from './web3';
 
-const address = '0x68935bCABA7d26B807556D6F1e82F454fB1a81d4';  // Διεύθυνση του smart contract
+const address = '0x8a0198a35b3b60a2f54edB757789C30fC9d6416a';  // Διεύθυνση του smart contract
 const abi = [
 	{
 		"constant": false,
@@ -424,6 +424,20 @@ const abi = [
 			{
 				"name": "pledgesCounts",
 				"type": "uint256[]"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "coOwner",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
 			}
 		],
 		"payable": false,
